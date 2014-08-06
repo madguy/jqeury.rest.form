@@ -2,7 +2,7 @@
 =======================
 
 ## About
- jQuery Form PluginをrestfulなURLに対応させるためのラッパープラグインです。
+ jQuery Form PluginをRESTfulなURLに対応させるためのラッパープラグインです。
 
 ## jQuery Form Plugin
 http://malsup.com/jquery/form/
