@@ -21,50 +21,53 @@
  */
 (function($) {
 	"use strict";
+	var regex = /:((?:\w)+)/g;
 
 	$.fn.restForm = function(options) {
-		var regex = /:((?:\w)+)/g;
-
 		this.ajaxFormUnbind().on('submit.form-plugin', function(e) {
-			var that = this;
 			if (e.isDefaultPrevented()) {
 				return;
 			}
 			e.preventDefault();
-
-			var $form = $(that);
-			var url = options.url || $form.attr('action');
-			var opt = $.extend({}, options, {
-				url: url.replace(regex, function(match, g1) {
-					var key = g1;
-					var param = $form.formToArray().filter(function(param) {
-						return param.name === key;
-					})[0];
-					if (param == null) {
-						return match;
-					}
-					return param.value;
-				}),
-				beforeSubmit: function(params, $form, opts) {
-					var keys = url.match(regex).map(function(match) {
-						return match.replace(regex, '$1');
-					});
-
-					params.map(function(item) {
-						return keys.indexOf(item.name);
-					}).forEach(function(index) {
-						params.splice(index, 1);
-					});
-
-					if ($.isFunction(options.beforeSubmit) === false) {
-						return;
-					}
-
-					return options.beforeSubmit.apply(that, [params, $form, opts]);
-				}
-			});
-
-			$(this).ajaxSubmit(opt);
+			$(this).restSubmit(options);
 		});
 	};
+
+	$.fn.restSubmit = function(options) {
+		var that = this;
+		var $form = $(that);
+		var url = options.url || $form.attr('action');
+		var opt = $.extend({}, options, {
+			url: url.replace(regex, function(match, g1) {
+				var key = g1;
+				var param = $form.formToArray().filter(function(param) {
+					return param.name === key;
+				})[0];
+				if (param == null) {
+					return match;
+				}
+				return param.value;
+			}),
+			beforeSubmit: function(params, $form, opts) {
+				var keys = url.match(regex).map(function(match) {
+					return match.replace(regex, '$1');
+				});
+
+				params.map(function(item) {
+					return keys.indexOf(item.name);
+				}).forEach(function(index) {
+					params.splice(index, 1);
+				});
+
+				if ($.isFunction(options.beforeSubmit) === false) {
+					return;
+				}
+
+				return options.beforeSubmit.apply(that, [params, $form, opts]);
+			}
+		});
+
+		$(this).ajaxSubmit(opt);
+	};
+
 })(jQuery);
