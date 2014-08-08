@@ -55,6 +55,8 @@
 
 				params.map(function(item) {
 					return keys.indexOf(item.name);
+				}).filter(function(index) {
+					return index > -1;
 				}).forEach(function(index) {
 					params.splice(index, 1);
 				});
