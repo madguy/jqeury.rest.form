@@ -53,11 +53,10 @@
 					return match.replace(regex, '$1');
 				});
 
-				params.map(function(item) {
-					return keys.indexOf(item.name);
-				}).filter(function(index) {
-					return index > -1;
-				}).forEach(function(index) {
+				params.filter(function(param) {
+					return keys.indexOf(param.name) > -1;
+				}).forEach(function(param) {
+					var index = params.indexOf(param);
 					params.splice(index, 1);
 				});
 
