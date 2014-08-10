@@ -49,7 +49,12 @@
 				return param.value;
 			}),
 			beforeSubmit: function(params, $form, opts) {
-				var keys = url.match(regex).map(function(match) {
+				var matches = url.match(regex);
+				if (matches == null) {
+					return;
+				}
+
+				var keys = matches.map(function(match) {
 					return match.replace(regex, '$1');
 				});
 
