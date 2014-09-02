@@ -69,7 +69,25 @@
 					return;
 				}
 
-				return options.beforeSubmit.apply(that, [params, $form, opts]);
+				return options.beforeSubmit.apply(that, arguments);
+			},
+			success: function() {
+				$form.trigger('success', arguments);
+				if ($.isFunction(options.success)) {
+					options.success.apply(this, arguments);
+				}
+			},
+			error: function() {
+				$form.trigger('error', arguments);
+				if ($.isFunction(options.error)) {
+					options.error.apply(this, arguments);
+				}
+			},
+			complete: function() {
+				$form.trigger('complete', arguments);
+				if ($.isFunction(options.complete)) {
+					options.complete.apply(this, arguments);
+				}
 			}
 		});
 
