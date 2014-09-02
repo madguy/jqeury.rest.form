@@ -21,7 +21,39 @@
  */
 (function($) {
 	"use strict";
-	var regex = /:((?:\w)+)/g;
+	var urlParameterRegex = /:((?:\w)+)/g;
+
+	var dataToJSON = function(data) {
+		if (data == null) {
+			return data;
+		}
+
+		if ($.isPlainObject(data)) {
+			return JSON.stringify(data);
+		}
+
+		if (/^\{.+\}$/.test(data)) {
+			return data;
+		}
+
+		var regex = /^(.+)=(.+)$/;
+		var params = data.split('&').reduce(function(params, kv) {
+			var match = regex.exec(kv);
+			if (match == null) {
+				return params;
+			}
+
+			var key = decodeURIComponent(match[1]);
+			var value = decodeURIComponent(match[2]);
+			if ($.isNumeric(value)) {
+				value = parseInt(value, 10);
+			}
+			params[key] = value;
+			return params;
+		}, {});
+
+		return JSON.stringify(params);
+	};
 
 	$.fn.restForm = function(options) {
 		this.ajaxFormUnbind().on('submit.form-plugin', function(e) {
@@ -38,7 +70,7 @@
 		var $form = $(that);
 		var url = options.url || $form.attr('action');
 		var opt = $.extend({}, options, {
-			url: url.replace(regex, function(match, g1) {
+			url: url.replace(urlParameterRegex, function(match, g1) {
 				var key = g1;
 				var param = $form.formToArray().filter(function(param) {
 					return param.name === key;
@@ -49,13 +81,13 @@
 				return param.value;
 			}),
 			beforeSubmit: function(params, $form, opts) {
-				var matches = url.match(regex);
+				var matches = url.match(urlParameterRegex);
 				if (matches == null) {
 					return;
 				}
 
 				var keys = matches.map(function(match) {
-					return match.replace(regex, '$1');
+					return match.replace(urlParameterRegex, '$1');
 				});
 
 				params.filter(function(param) {
@@ -69,7 +101,18 @@
 					return;
 				}
 
-				return options.beforeSubmit.apply(that, arguments);
+				return options.beforeSubmit.apply(this, arguments);
+			},
+			beforeSend: function(jqXHR, settings) {
+				if (settings.type !== 'GET' && settings.contentType === 'application/json' && settings.data != null) {
+					settings.data = dataToJSON(settings.data);
+				}
+
+				if ($.isFunction(options.beforeSend) === false) {
+					return;
+				}
+
+				return options.beforeSend.apply(this, arguments);
 			},
 			success: function() {
 				$form.trigger('success', arguments);
