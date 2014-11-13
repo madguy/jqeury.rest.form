@@ -36,9 +36,10 @@
 			return data;
 		}
 
-		var regex = /^(.+)=(.+)$/;
+		var kvRegex = /^(.+)=(.+)$/;
+		var booleanRegex = /^(?:true|false)$/i;
 		var params = data.split('&').reduce(function(params, kv) {
-			var match = regex.exec(kv);
+			var match = kvRegex.exec(kv);
 			if (match == null) {
 				return params;
 			}
@@ -48,7 +49,20 @@
 			if ($.isNumeric(value)) {
 				value = parseInt(value, 10);
 			}
-			params[key] = value;
+
+			if (booleanRegex.test(value)) {
+				value = /^true$/i.test(value);
+			}
+
+			var isArray = /\[\]$/.test(key);
+			if (isArray) {
+				key = key.slice(0, -2);
+				params[key] = params[key] || [];
+				params[key].push(value);
+			} else {
+				params[key] = value;
+			}
+
 			return params;
 		}, {});
 
@@ -63,11 +77,13 @@
 			e.preventDefault();
 			$(this).restSubmit(options);
 		});
+		return this;
 	};
 
 	$.fn.restSubmit = function(options) {
-		var that = this;
-		var $form = $(that);
+		options = $.isPlainObject(options) ? options : {};
+
+		var $form = this;
 		var url = options.url || $form.attr('action');
 		var opt = $.extend({}, options, {
 			url: url.replace(urlParameterRegex, function(match, g1) {
@@ -82,20 +98,18 @@
 			}),
 			beforeSubmit: function(params, $form, opts) {
 				var matches = url.match(urlParameterRegex);
-				if (matches == null) {
-					return;
+				if (matches != null) {
+					var keys = matches.map(function(match) {
+						return match.replace(urlParameterRegex, '$1');
+					});
+
+					params.filter(function(param) {
+						return keys.indexOf(param.name) > -1;
+					}).forEach(function(param) {
+						var index = params.indexOf(param);
+						params.splice(index, 1);
+					});
 				}
-
-				var keys = matches.map(function(match) {
-					return match.replace(urlParameterRegex, '$1');
-				});
-
-				params.filter(function(param) {
-					return keys.indexOf(param.name) > -1;
-				}).forEach(function(param) {
-					var index = params.indexOf(param);
-					params.splice(index, 1);
-				});
 
 				if ($.isFunction(options.beforeSubmit) === false) {
 					return;
@@ -134,7 +148,7 @@
 			}
 		});
 
-		$(this).ajaxSubmit(opt);
+		$form.ajaxSubmit(opt);
 	};
 
 })(jQuery);
