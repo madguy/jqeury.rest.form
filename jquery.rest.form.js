@@ -86,9 +86,15 @@
 		var $form = this;
 		var url = options.url || $form.attr('action');
 		var opt = $.extend({}, options, {
-			url: url.replace(urlParameterRegex, function(match, g1) {
-				var key = g1;
-				var param = $form.formToArray().filter(function(param) {
+			url: url.replace(urlParameterRegex, function(match, key) {
+				var param;
+				if (options.data && options.data[key]) {
+					param = options.data[key];
+					delete options.data[key];
+					return param;
+				}
+
+				param = $form.formToArray().filter(function(param) {
 					return param.name === key;
 				})[0];
 				if (param == null) {
@@ -97,19 +103,16 @@
 				return param.value;
 			}),
 			beforeSubmit: function(params, $form, opts) {
-				var matches = url.match(urlParameterRegex);
-				if (matches != null) {
-					var keys = matches.map(function(match) {
-						return match.replace(urlParameterRegex, '$1');
-					});
+				var keys = (url.match(urlParameterRegex) || []).map(function(match) {
+					return match.replace(urlParameterRegex, '$1');
+				});
 
-					params.filter(function(param) {
-						return keys.indexOf(param.name) > -1;
-					}).forEach(function(param) {
-						var index = params.indexOf(param);
-						params.splice(index, 1);
-					});
-				}
+				params.filter(function(param) {
+					return keys.indexOf(param.name) > -1;
+				}).forEach(function(param) {
+					var index = params.indexOf(param);
+					params.splice(index, 1);
+				});
 
 				if ($.isFunction(options.beforeSubmit) === false) {
 					return;
